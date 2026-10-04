@@ -36,12 +36,41 @@ export default function HostDashboard() {
   if (error) return <p className="error">{error}</p>;
   if (!listings) return <Loader />;
 
-  // TODO: earnings summary cards (total earnings, upcoming check-ins, occupancy).
+  const now = new Date();
+  const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const totalEarnings = bookings
+    .filter((b) => ['confirmed', 'completed'].includes(b.status))
+    .reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+
+  const upcomingCheckIns = bookings.filter((b) => {
+    if (b.status !== 'confirmed') return false;
+    const checkInDate = new Date(b.checkIn);
+    return checkInDate >= now && checkInDate <= next7Days;
+  }).length;
+
+  const pendingCount = bookings.filter((b) => b.status === 'pending').length;
+
   return (
     <section>
       <div className="row-between">
         <h1>Host Dashboard</h1>
         <Link to="/host/listings/new" className="btn">+ New listing</Link>
+      </div>
+
+      <div className="stats-grid">
+        <div className="card stat-card">
+          <span className="muted small">Total Earnings</span>
+          <h3>{formatINR(totalEarnings)}</h3>
+        </div>
+        <div className="card stat-card">
+          <span className="muted small">Upcoming Check-ins (7 days)</span>
+          <h3>{upcomingCheckIns}</h3>
+        </div>
+        <div className="card stat-card">
+          <span className="muted small">Pending Requests</span>
+          <h3>{pendingCount}</h3>
+        </div>
       </div>
 
       <h2>Booking requests</h2>
